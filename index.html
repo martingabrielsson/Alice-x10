@@ -396,7 +396,7 @@ document.querySelectorAll('.gg').forEach(e => e.innerHTML = LOGO_FG);
 /* ---------- storage ---------- */
 // Cloud sync between devices (Firebase Firestore, its own Firebase project "Alice-x10").
 // The code is the name of the shared document: every device that has it sees the same data.
-const SYNC_CFG = { apiKey: '', projectId: '', code: 'Alice-x10-multiplikator-kvgscgtp' }; // fill in apiKey + projectId from the Alice-x10 Firebase project (see SYNC_SETUP.md)
+const SYNC_CFG = { apiKey: 'AIzaSyC2IwTUzCv-BcZBCtvtZw4QGqe4cQUojK0', projectId: 'alice-x10', code: 'Alice-x10-multiplikator-kvgscgtp' };
 let syncTimer = null, syncBusy = false, syncStatus = '';
 const KEY = 'alice-x10.v1';
 let state = load();
