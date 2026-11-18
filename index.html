@@ -394,9 +394,9 @@ document.querySelectorAll('.gbg').forEach(e => e.innerHTML = LOGO_BG);
 document.querySelectorAll('.gg').forEach(e => e.innerHTML = LOGO_FG);
 
 /* ---------- storage ---------- */
-// Cloud sync between devices (Firebase Firestore, same project as the glosor app, own document).
+// Cloud sync between devices (Firebase Firestore, its own Firebase project "Alice-x10").
 // The code is the name of the shared document: every device that has it sees the same data.
-const SYNC_CFG = { apiKey: 'AIzaSyBp8TgbQU-eyV7KREYU63qdEscBKHFwsHA', projectId: 'glosor-wordgame', code: 'Alice-x10-multiplikator-kvgscgtp' };
+const SYNC_CFG = { apiKey: '', projectId: '', code: 'Alice-x10-multiplikator-kvgscgtp' }; // fill in apiKey + projectId from the Alice-x10 Firebase project (see SYNC_SETUP.md)
 let syncTimer = null, syncBusy = false, syncStatus = '';
 const KEY = 'alice-x10.v1';
 let state = load();
