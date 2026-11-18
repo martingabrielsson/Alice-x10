@@ -109,3 +109,26 @@ Bygg så att varje post har `t` (senaste ändring) från början, så att synken
 2. **Logga**: bakgrundsbild + en logga som kan snurra på start-skärmen, som i glosappen. Tills dess använder jag en enkel tillfällig.
 3. Firebase: **ja till samma projekt som glosappen**? (Jag skriver regeltexten.)
 4. Slumptecken på slutet av koden, eller behålla `Alice-x10-multiplikator`?
+
+## Förslag: Memory (4 × 4 = 8 par)
+Status: **förslag, inte byggt.** Modell: Memory-spelet i glosappen (alla kort synliga, tryck ett av varje sort, poäng och tid, bra-ljud/fel-ljud, konfetti, rekord).
+
+**Spelplan:** 16 kort i rutnät 4 × 4 = 8 par. Två färger: **talet** ("7 × 8" eller "56 ÷ 7", Midnatt med gul text) och **svaret** ("56" eller "8", Plommon med krämvit text). Man trycker på ett kort av varje färg i valfri ordning. Rätt par blir grönt och tonas ned. Fel par skakar och släpps efter en kort stund.
+
+**Val före start:** ✖️ Gånger / ➗ Delat med / Båda, och vilka tabeller (kryssrutor 0–12 med snabbval Veckans läxa, Alla, Mina svåraste, som i Öva).
+
+**Hur talen väljs:** appen väljer 8 tal med hjälp av träningsmotorn, så att de som Alice kan sämst oftare kommer med (utan att göra spelet omöjligt). Två par får aldrig ha samma svar (annars blir "12" tvetydigt för 3 × 4 och 2 × 6).
+
+**Poäng:**
+- Rätt par: **+10**. Flera rätta par i rad ger **kombo-bonus** (+5, +10, +15 …).
+- Fel par: **−3** (aldrig under 0) och kombon bryts.
+- Tidsbonus i slutet: 2 poäng per sekund under 90 sekunder.
+- 1–3 stjärnor efter antal fel och tid. Rekord sparas per läge (Gånger, Delat med, Båda).
+
+**Ljud (inga röster, bara effekter, som övriga appen):**
+- Rätt par: glad "ding-ding". Tre rätta i rad: stigande ton. Fel: lågt "bzzz". Alla klara: fanfar och konfetti.
+- Texten på skärmen ger återkoppling: "Bra!", "Snyggt!", "Superbra!", "Kombo ×3 🔥" vid rätt och "Nästan – försök igen!" vid fel.
+
+**Kopplas till träningen:** ett fel par räknas som ett misstag för talet och kommer tillbaka i Dagens träning. Ett rätt par ger "rätt" i statistiken men höjer inte nivån (ingen tidsmätning per par). Efter spelet visas "Svåra par" och en knapp "Öva de här".
+
+**Byggs av det vi redan har:** `pickFacts`, `keysFor`, tabellväljaren, `tone`/`sfx`, `confetti` och startsidans/resultatskärmens stil. Ungefär 150 rader. Rekord och poäng tas med när synken (fas 2) byggs.
