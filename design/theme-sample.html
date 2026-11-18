@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Färgschema – mörkt tema (förslag)</title>
+<style>
+  :root {
+    /* 6 mörka färger */
+    --d1: #0e1a2b;  /* Natt        – bakgrund */
+    --d2: #0f4d33;  /* Skog        – kort, logotypens grön */
+    --d3: #24307a;  /* Midnatt     – knapp */
+    --d4: #4a2a7a;  /* Aubergine   – knapp */
+    --d5: #86205a;  /* Plommon     – knapp */
+    --d6: #8a4a12;  /* Rost        – knapp */
+    /* 3 textfärger */
+    --t1: #f6f2e7;  /* Krämvit – brödtext och knappar */
+    --t2: #ffd54a;  /* Solgul  – rubriker, siffror, betoning */
+    --t3: #ff8ec9;  /* Rosa    – accent, länkar, små etiketter */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--d1); color: var(--t1); font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; padding: 20px; line-height: 1.5; }
+  h1 { font-size: 28px; color: var(--t2); margin-bottom: 4px; }
+  h2 { font-size: 20px; color: var(--t2); margin: 28px 0 10px; }
+  p.lead { color: var(--t1); opacity: .85; max-width: 760px; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .grid6 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .sw { border-radius: 16px; padding: 14px; border: 1px solid rgba(255,255,255,.12); }
+  .sw b { font-size: 18px; display: block; }
+  .sw small { display: block; opacity: .85; margin-bottom: 8px; font-size: 13px; }
+  .sw .l { font-weight: 700; padding: 2px 0; }
+  .sw .l span { font-weight: 400; font-size: 12px; opacity: .8; float: right; }
+  .fonts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .fc { border-radius: 16px; padding: 14px; background: var(--d2); border: 1px solid rgba(255,255,255,.12); }
+  .fc .big { font-size: 34px; font-weight: 800; }
+  table { border-collapse: collapse; width: 100%; max-width: 760px; }
+  th, td { padding: 8px 10px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.12); font-size: 14px; }
+  th:first-child, td:first-child { text-align: left; }
+  .ok { color: #7be0a4; font-weight: 700; } .big-ok { color: var(--t2); font-weight: 700; }
+  .phones { display: flex; flex-wrap: wrap; gap: 22px; }
+  .phone { width: 330px; background: var(--d1); border: 2px solid rgba(255,255,255,.18); border-radius: 30px; padding: 14px; }
+  .phone h3 { text-align: center; font-size: 13px; color: var(--t3); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+  .logo { width: 120px; height: 120px; margin: 0 auto 6px; border-radius: 22.4%; background: #0f4d33; display: grid; place-items: center; font: 900 54px "Arial Black", sans-serif; color: #ff6fb5; position: relative; overflow: hidden; }
+  .logo::before { content: "7×8=56 · 6×9=54 · 3×4=12 · 9×9=81 · 5×6=30 · 7×8=56 · 6×9=54 · 3×4=12 · 9×9=81"; position: absolute; inset: -20px; transform: rotate(-8deg); color: #ffd54a; opacity: .5; font: 700 12px/20px "Trebuchet MS", sans-serif; word-break: break-all; }
+  .logo b { position: relative; }
+  .tag { text-align: center; color: var(--t1); opacity: .8; margin-bottom: 8px; font-size: 14px; }
+  .card { background: var(--d2); border-radius: 18px; padding: 12px; text-align: center; margin-bottom: 10px; }
+  .card .a { font-size: 16px; } .card .a b { color: var(--t2); }
+  .card .b { font-size: 12px; color: var(--t3); margin-top: 2px; }
+  .btn { display: block; width: 100%; text-align: center; border: 0; border-radius: 16px; padding: 13px; margin: 9px 0; font: 700 18px inherit; font-family: inherit; color: var(--t1); box-shadow: 0 4px 0 rgba(0,0,0,.4); }
+  .qcard { background: var(--d3); border-radius: 22px; padding: 14px; text-align: center; margin: 6px 0 10px; }
+  .qcard small { color: var(--t3); font-weight: 700; }
+  .qtext { font-size: 44px; font-weight: 800; color: var(--t2); letter-spacing: 1px; }
+  .ans { width: 150px; margin: 6px auto 0; border-radius: 14px; background: var(--d1); color: var(--t1); border: 3px solid var(--t3); font-size: 36px; font-weight: 800; padding: 4px; }
+  .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .keys span { background: var(--d2); color: var(--t1); border-radius: 13px; text-align: center; padding: 10px 0; font-size: 22px; font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.4); }
+  .keys .go { background: var(--d5); } .keys .del { background: var(--d6); }
+  .okmsg { text-align: center; color: var(--t2); font-weight: 800; margin-top: 8px; }
+  .hm { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; margin: 6px 0; }
+  .hm i { aspect-ratio: 1; border-radius: 4px; display: block; }
+  .n { background: #2a3b53; } .w { background: #e0525c; } .l2 { background: #e8b923; } .g { background: #3fbf7f; } .gd { background: #f59e0b; }
+  .legend { font-size: 12px; color: var(--t1); opacity: .85; text-align: center; }
+  .note { max-width: 760px; margin-top: 10px; font-size: 14px; opacity: .85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Alice-x10 · mörkt tema (förslag)</h1>
+  <p class="lead">Sex mörka färger och tre textfärger. Alla färger utgår från loggans mörkgröna bakgrund, rosa text och gula siffror. Det här är bara ett exempel, appen är inte ändrad än.</p>
+
+  <h2>6 mörka färger</h2>
+  <div class="grid6" id="swatches"></div>
+
+  <h2>3 textfärger</h2>
+  <div class="fonts">
+    <div class="fc"><div class="big" style="color:var(--t1)">Krämvit</div><b>#f6f2e7</b><br>Brödtext, knappar, frågor och svar. Fungerar på alla sex bakgrunder.</div>
+    <div class="fc"><div class="big" style="color:var(--t2)">Solgul</div><b>#ffd54a</b><br>Rubriker, stora siffror (7 × 8), poäng och stjärnor. Samma gula som siffrorna i loggan.</div>
+    <div class="fc"><div class="big" style="color:var(--t3)">Rosa</div><b>#ff8ec9</b><br>Små etiketter, hjälptexter och markeringar. Ljusare rosa än loggan så att det syns bra på mörkt.</div>
+  </div>
+
+  <h2>Så här blir det i appen</h2>
+  <div class="phones">
+    <div class="phone">
+      <h3>Startsidan</h3>
+      <div class="logo"><b>Ax9</b></div>
+      <div class="tag">Alice övar multiplikation!</div>
+      <div class="card"><div class="a">Veckans tabeller: <b>Vecka 48</b></div><div class="b">Kan: 23 av 169 · 🔥 3 dagar i rad</div></div>
+      <div class="btn" style="background:var(--d4)">⚡ Dagens träning</div>
+      <div class="btn" style="background:var(--d6)">🔍 Hitta vad jag kan</div>
+      <div class="btn" style="background:var(--d2)">📚 Mina tabeller</div>
+      <div class="btn" style="background:var(--d3)">✏️ Öva</div>
+      <div class="btn" style="background:var(--d5)">📈 Mina framsteg</div>
+    </div>
+    <div class="phone">
+      <h3>Fråga</h3>
+      <div class="qcard"><small>Dagens träning</small><div class="qtext">7 × 8 =</div><div class="ans">56</div></div>
+      <div class="okmsg">✓ Rätt!</div>
+      <div class="keys" style="margin-top:10px"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="del">⌫</span><span>0</span><span class="go">OK</span></div>
+    </div>
+    <div class="phone">
+      <h3>Mina framsteg</h3>
+      <div class="card"><div class="a"><b>23 av 169</b> gångertal sitter ✅</div></div>
+      <div class="hm" id="hm"></div>
+      <div class="legend">grått = ny · rött = svår · gult = övar · grönt = sitter · guld = snabbt</div>
+      <div class="card" style="margin-top:12px;text-align:left"><b style="color:var(--t2)">Det här övar vi mest på</b><div style="font-size:14px;margin-top:4px">7 × 8 = 56 <span style="color:var(--t3)">(fel 3, rätt 1)</span><br>6 × 9 = 54 <span style="color:var(--t3)">(fel 2, rätt 0)</span></div></div>
+    </div>
+  </div>
+
+  <h2>Läsbarhet (kontrast)</h2>
+  <p class="note">Kontrastvärde mellan text och bakgrund. 4,5 eller mer är bra för vanlig text (✓), 3 eller mer räcker för stor text som rubriker och stora siffror (S). Alla tre textfärger klarar sig minst som stor text på alla sex färger.</p>
+  <table id="tbl"></table>
+</div>
+<script>
+const darks = [
+  ['Natt', '#0e1a2b', 'Bakgrund på alla skärmar'],
+  ['Skog', '#0f4d33', 'Kort och rutor (loggans grön)'],
+  ['Midnatt', '#24307a', 'Frågekortet och knappen Öva'],
+  ['Aubergine', '#4a2a7a', 'Knappen Dagens träning'],
+  ['Plommon', '#86205a', 'Knappen Mina framsteg, OK'],
+  ['Rost', '#8a4a12', 'Knappen Hitta vad jag kan, ⌫']
+];
+const fonts = [['Krämvit', '#f6f2e7'], ['Solgul', '#ffd54a'], ['Rosa', '#ff8ec9']];
+const lum = h => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4)); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+const mark = r => r >= 4.5 ? '<span class="ok">✓</span>' : r >= 3 ? '<span class="big-ok">S</span>' : '✗';
+const sw = document.getElementById('swatches');
+darks.forEach(([n, h, use]) => {
+  const d = document.createElement('div'); d.className = 'sw'; d.style.background = h;
+  d.innerHTML = `<b>${n}</b><small>${h} · ${use}</small>` + fonts.map(([fn, fh]) => `<div class="l" style="color:${fh}">${fn} text <span>${ratio(h, fh).toFixed(1)}</span></div>`).join('');
+  sw.appendChild(d);
+});
+const t = document.getElementById('tbl');
+t.innerHTML = '<tr><th>Bakgrund</th>' + fonts.map(f => `<th style="color:${f[1]}">${f[0]}</th>`).join('') + '</tr>' +
+  darks.map(([n, h]) => `<tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:${h};border:1px solid #fff4;vertical-align:-2px;margin-right:6px"></span>${n} ${h}</td>` + fonts.map(([fn, fh]) => { const r = ratio(h, fh); return `<td>${r.toFixed(1)} ${mark(r)}</td>`; }).join('') + '</tr>').join('');
+// heatmap sample
+const hm = document.getElementById('hm'), cls = ['n', 'n', 'l2', 'g', 'g', 'gd', 'w', 'g', 'l2', 'g', 'n', 'g', 'gd'];
+for (let i = 0; i < 13 * 7; i++) { const e = document.createElement('i'); e.className = cls[(i * 7 + (i >> 3)) % cls.length]; hm.appendChild(e); }
+</script>
+</body>
+</html>
