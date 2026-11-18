@@ -2,6 +2,11 @@
 
 Status: **plan uppdaterad med dina svar. Inget är byggt än.** Logga levereras senare (jag använder en tillfällig tills dess).
 
+## PÅMINNELSE: nästa steg (innan fas 2 byggs)
+- Fas 1 är byggd och pushad. Designändringar görs först (ny logga "Ax9", rosa text på mörkgrön bakgrund, gula siffror).
+- **Fas 2 (synk mellan enheter) väntar på två svar:** (1) samma Firebase-projekt som glosappen? (2) kod `Alice-x10-multiplikator` eller med slumptecken på slutet?
+- Gamla ikoner och gamla loggan (x10 på lavendel) ligger sparade i `old-icons/`.
+
 ## 1. Beslut
 | Fråga | Beslut |
 |---|---|

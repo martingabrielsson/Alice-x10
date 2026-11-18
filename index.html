@@ -48,7 +48,7 @@
   .helptip { font-size: 15px; color: var(--muted); line-height: 1.6; margin-top: 8px; }
 
   /* logo + splash */
-  .glogo { position: relative; aspect-ratio: 1; border-radius: 22.4%; overflow: hidden; background: #d8c6f0; }
+  .glogo { position: relative; aspect-ratio: 1; border-radius: 22.4%; overflow: hidden; background: #0f4d33; }
   .glogo > div { position: absolute; inset: 0; }
   .glogo svg { width: 100%; height: 100%; display: block; }
   #logo { width: min(230px, 62vw); display: block; margin: 8px auto 4px; filter: drop-shadow(0 8px 14px rgba(94,53,209,.25)); }
@@ -302,9 +302,9 @@ const LOGO_BG = (() => {
     '9×8=72 · 3×7=21 · 12×4=48 · 5×4=20 · 8×5=40 · 11×6=66 · 7×2=14'];
   let t = '';
   rows.forEach((r, i) => { t += `<text x="${-120 + (i % 3) * 60}" y="${150 + i * 100}">${r}</text>`; });
-  return '<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><rect width="1024" height="1024" fill="#d8c6f0"/><g transform="rotate(-8 512 512)" font-family="Trebuchet MS, Segoe UI, sans-serif" font-weight="700" font-size="40" fill="#7aa6dc" opacity=".9">' + t + '</g></svg>';
+  return '<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><rect width="1024" height="1024" fill="#0f4d33"/><g transform="rotate(-8 512 512)" font-family="Trebuchet MS, Segoe UI, sans-serif" font-weight="700" font-size="40" fill="#ffd54a" opacity=".9">' + t + '</g></svg>';
 })();
-const LOGO_FG = '<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><text x="512" y="650" text-anchor="middle" fill="#f7ae72" stroke="#d8c6f0" stroke-width="44" stroke-linejoin="round" paint-order="stroke" font-family="Arial Black, Trebuchet MS, Segoe UI, sans-serif" font-weight="900" font-size="400">×10</text></svg>';
+const LOGO_FG = '<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><text x="512" y="650" text-anchor="middle" fill="#ff6fb5" stroke="#0f4d33" stroke-width="44" stroke-linejoin="round" paint-order="stroke" font-family="Arial Black, Trebuchet MS, Segoe UI, sans-serif" font-weight="900" font-size="400">Ax9</text></svg>';
 document.querySelectorAll('.gbg').forEach(e => e.innerHTML = LOGO_BG);
 document.querySelectorAll('.gg').forEach(e => e.innerHTML = LOGO_FG);
 
