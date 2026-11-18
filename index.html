@@ -190,7 +190,7 @@
     </ol>
     <div class="helptip">💡 Svara snabbt när du vet svaret – då räknas talet som kunnat. Behöver du hjälp finns en ledtråd.</div>
   </details>
-  <div style="text-align:center"><button class="btn ghost small" id="h-mute"></button></div>
+  <div style="text-align:center"><button class="btn ghost small" id="h-mute"></button> <button class="btn ghost small" id="h-sync">☁️ Synk &amp; kopia</button></div>
 </div>
 
 <!-- MY TABLES -->
@@ -250,6 +250,27 @@
     <div class="muted" id="p-count" style="text-align:center;margin-top:6px"></div>
   </div>
   <button class="btn" id="p-start">▶ Starta</button>
+</div>
+
+<!-- SYNC + BACKUP -->
+<div id="syncscreen" class="screen">
+  <div class="topbar"><button class="btn small ghost" data-go="home">← Hem</button></div>
+  <h2>Synk &amp; säkerhetskopia</h2>
+  <div class="box">
+    <b>☁️ Synk mellan enheter</b>
+    <p id="sy-state" style="margin:8px 0"></p>
+    <p class="muted" id="sy-status" style="min-height:22px"></p>
+    <button class="btn" id="sy-now">🔄 Synka nu</button>
+    <p class="muted" style="font-size:14px;margin-top:6px">Alices läxor, framsteg, svåra tal och rekord delas mellan alla enheter som öppnar appen. Det sker automatiskt några sekunder efter varje ändring och när appen öppnas.</p>
+  </div>
+  <div class="box">
+    <b>💾 Säkerhetskopia</b>
+    <p class="muted" style="font-size:14px;margin:6px 0 8px">Spara allt som en fil på enheten, eller läs in en sparad fil. Att läsa in slår ihop filen med det som redan finns (det nyaste vinner), så inget går förlorat.</p>
+    <button class="btn small ghost" id="bk-export">💾 Exportera</button>
+    <button class="btn small ghost" id="bk-import">📥 Importera</button>
+    <input type="file" id="bk-file" accept=".json,application/json" style="display:none">
+    <div id="bk-msg" style="font-weight:700;min-height:22px;margin-top:6px"></div>
+  </div>
 </div>
 
 <!-- MEMORY SETUP -->
@@ -373,6 +394,10 @@ document.querySelectorAll('.gbg').forEach(e => e.innerHTML = LOGO_BG);
 document.querySelectorAll('.gg').forEach(e => e.innerHTML = LOGO_FG);
 
 /* ---------- storage ---------- */
+// Cloud sync between devices (Firebase Firestore, same project as the glosor app, own document).
+// The code is the name of the shared document: every device that has it sees the same data.
+const SYNC_CFG = { apiKey: 'AIzaSyBp8TgbQU-eyV7KREYU63qdEscBKHFwsHA', projectId: 'glosor-wordgame', code: 'Alice-x10-multiplikator-kvgscgtp' };
+let syncTimer = null, syncBusy = false, syncStatus = '';
 const KEY = 'alice-x10.v1';
 let state = load();
 function load() {
@@ -381,7 +406,8 @@ function load() {
   s = s && typeof s === 'object' ? s : {};
   return Object.assign({ homeworks: [], activeHw: null, deletedHw: {}, facts: {}, best: {}, streak: { n: 0, last: '' }, muted: false, practice: { tables: null, mode: 'both', n: 20 }, memory: { tables: null, mode: 'both' } }, s);
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+function saveLocal() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+function save() { saveLocal(); scheduleSync(); }
 const $ = id => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -507,7 +533,8 @@ document.head.insertAdjacentHTML('beforeend', '<style>@keyframes fall { to { tra
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   $(id).classList.add('active'); window.scrollTo(0, 0);
-  ({ home: renderHome, tables: renderTables, practice: renderPractice, memsetup: renderMemSetup, progress: renderProgress })[id]?.();
+  if (id === 'syncscreen') $('bk-msg').textContent = '';
+  ({ home: renderHome, tables: renderTables, practice: renderPractice, memsetup: renderMemSetup, progress: renderProgress, syncscreen: renderSync })[id]?.();
 }
 document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) show(g.dataset.go); });
 
@@ -915,6 +942,137 @@ function detail(key, d) {
   const f = parse(key), s = state.facts[key];
   el.textContent = !s ? `${f.text} = ${f.ans} · ännu inte provad` : `${f.text} = ${f.ans} · nivå ${s.box} av 5 · rätt ${s.ok}, fel ${s.miss}` + (s.lastMs ? ` · senast ${(s.lastMs / 1000).toFixed(1)} s` : '');
 }
+
+/* ---------- sync between devices (Firebase Firestore) + backup ---------- */
+function syncReady() { return !!(SYNC_CFG.apiKey && SYNC_CFG.projectId && SYNC_CFG.code); }
+function scheduleSync(ms = 2500) {
+  if (!syncReady()) return;
+  clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(), ms);
+}
+function snapshot() { // what is shared between devices
+  return { homeworks: state.homeworks, deleted: state.deletedHw || {}, facts: state.facts || {}, best: state.best || {}, streak: state.streak || { n: 0, last: '' } };
+}
+function mergeData(a, b) { // pure. Lists: newest change wins, deletions stick. Facts: newest answer wins, counts take the highest.
+  const deleted = { ...(a.deleted || {}) };
+  for (const [id, t] of Object.entries(b.deleted || {})) deleted[id] = Math.max(deleted[id] || 0, t);
+  const byId = {};
+  [...(a.homeworks || []), ...(b.homeworks || [])].forEach(x => { const c = byId[x.id]; if (!c || (x.updated || 0) > (c.updated || 0)) byId[x.id] = x; });
+  let hws = Object.values(byId).filter(x => !deleted[x.id]);
+  const autos = hws.filter(x => x.auto).sort((p, q) => p.id < q.id ? -1 : 1); // every device starts with its own "Alla tabeller": keep one
+  autos.slice(1).forEach(x => { deleted[x.id] = Date.now(); });
+  hws = hws.filter(x => !x.auto || x === autos[0]);
+  const facts = { ...(a.facts || {}) };
+  for (const [k, f] of Object.entries(b.facts || {})) {
+    const g = facts[k]; if (!g) { facts[k] = f; continue; }
+    const n = (f.t || 0) > (g.t || 0) ? f : g;
+    facts[k] = { ...n, ok: Math.max(f.ok || 0, g.ok || 0), miss: Math.max(f.miss || 0, g.miss || 0) };
+  }
+  const best = { ...(a.best || {}) }; best.memory = { ...((a.best || {}).memory || {}) };
+  for (const [m, v] of Object.entries((b.best || {}).memory || {})) best.memory[m] = Math.max(best.memory[m] || 0, v);
+  const sa = a.streak || { n: 0, last: '' }, sb = b.streak || { n: 0, last: '' };
+  const streak = sa.last > sb.last ? sa : sb.last > sa.last ? sb : { n: Math.max(sa.n || 0, sb.n || 0), last: sa.last };
+  return { homeworks: hws, deleted, facts, best, streak };
+}
+function syncCanon(d) { // same content, same string (for "is there anything new to upload?")
+  const sortObj = o => Object.fromEntries(Object.entries(o || {}).sort(([x], [y]) => x < y ? -1 : 1));
+  return JSON.stringify({
+    homeworks: [...(d.homeworks || [])].sort((x, y) => x.id < y.id ? -1 : 1).map(x => [x.id, x.name, x.tables, x.updated || 0, !!x.auto]),
+    deleted: sortObj(d.deleted), facts: Object.entries(sortObj(d.facts)).map(([k, f]) => [k, f.box, f.ok, f.miss, f.due, f.t]), best: d.best || {}, streak: d.streak || {}
+  });
+}
+function applyMerged(m) {
+  state.homeworks = m.homeworks; state.deletedHw = m.deleted; state.facts = m.facts; state.best = m.best; state.streak = m.streak;
+  if (!state.homeworks.length) newHw('Alla tabeller', ALL_T, true);
+  if (!state.homeworks.some(x => x.id === state.activeHw)) state.activeHw = state.homeworks[0].id;
+  saveLocal();
+}
+function setSyncStatus(t) { syncStatus = t; if ($('syncscreen').classList.contains('active')) renderSync(); }
+function refreshView() { // redraw a screen that shows synced data (never a running round, memory game or editor)
+  const cur = document.querySelector('.screen.active'); if (!cur) return;
+  ({ home: renderHome, tables: renderTables, progress: renderProgress, practice: renderPractice, memsetup: renderMemSetup, syncscreen: renderSync })[cur.id]?.();
+}
+async function syncNow() {
+  if (!syncReady() || syncBusy) return;
+  if (['round', 'memory', 'tbledit'].some(id => $(id).classList.contains('active'))) { scheduleSync(8000); return; }
+  syncBusy = true; setSyncStatus('Synkar…');
+  const base = `https://firestore.googleapis.com/v1/projects/${SYNC_CFG.projectId}/databases/(default)/documents/families/${encodeURIComponent(SYNC_CFG.code)}`;
+  const key = '?key=' + encodeURIComponent(SYNC_CFG.apiKey);
+  try {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const r = await fetch(base + key);
+      let remote = { homeworks: [], deleted: {}, facts: {}, best: {}, streak: { n: 0, last: '' } }, cond;
+      if (r.status === 200) {
+        const d = await r.json();
+        try { remote = JSON.parse(d.fields.data.stringValue); } catch (e) {}
+        cond = 'currentDocument.updateTime=' + encodeURIComponent(d.updateTime);
+      } else if (r.status === 404) cond = 'currentDocument.exists=false';
+      else throw new Error('HTTP ' + r.status);
+      const merged = mergeData(snapshot(), remote);
+      applyMerged(merged);
+      if (syncCanon(merged) === syncCanon(remote)) break; // nothing new to upload
+      const pr = await fetch(base + key + '&updateMask.fieldPaths=data&' + cond, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { data: { stringValue: JSON.stringify(merged) } } })
+      });
+      if (pr.ok) break;
+      if ((pr.status === 400 || pr.status === 409) && attempt < 2) continue; // someone else wrote meanwhile: merge again
+      throw new Error('HTTP ' + pr.status);
+    }
+    (state.sync = state.sync || {}).last = Date.now(); saveLocal(); setSyncStatus('');
+  } catch (e) {
+    setSyncStatus('Ingen kontakt just nu – försöker igen senare.'); scheduleSync(30000);
+  }
+  syncBusy = false; refreshView();
+}
+function renderSync() {
+  $('sy-state').textContent = syncReady() ? '✓ Ansluten. Alla enheter som öppnar appen delar samma data.' : 'Synk är inte inställd.';
+  const last = syncReady() && state.sync && state.sync.last ? 'Senast synkad: ' + new Date(state.sync.last).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }) : '';
+  $('sy-status').textContent = syncStatus || last;
+  $('sy-now').disabled = !syncReady();
+}
+$('h-sync').onclick = () => show('syncscreen');
+$('sy-now').onclick = () => syncNow();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleSync(500); });
+window.addEventListener('online', () => scheduleSync(500));
+setInterval(() => scheduleSync(0), 60000);
+scheduleSync(1000);
+
+/* ---- backup: export / import a file ---- */
+function backupMsg(t, ok) { const m = $('bk-msg'); m.textContent = t; m.style.color = ok ? 'var(--green)' : 'var(--red)'; }
+$('bk-export').onclick = () => {
+  const data = { app: 'alice-x10', version: 1, exported: new Date().toISOString(), ...snapshot() };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  a.download = 'alice-x10-kopia-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  backupMsg(`Sparade ${state.homeworks.length} läxor och ${Object.keys(state.facts).length} tal till en fil.`, true);
+};
+const clean = (s, n) => (typeof s === 'string' ? s : '').trim().slice(0, n);
+function importData(d) {
+  if (!d || d.app !== 'alice-x10' || !Array.isArray(d.homeworks)) throw new Error('format');
+  const hws = d.homeworks.map(x => ({
+    id: clean(x.id, 40) || uid(), name: clean(x.name, 40) || 'Importerad läxa',
+    tables: (Array.isArray(x.tables) ? x.tables : []).map(Number).filter(t => Number.isInteger(t) && t >= 0 && t <= 12),
+    updated: +x.updated || Date.now(), auto: !!x.auto
+  })).filter(x => x.tables.length);
+  const facts = {};
+  Object.entries(d.facts || {}).forEach(([k, f]) => {
+    if (!/^\d+x\d+$|^\d+\/\d+$/.test(k) || !f || typeof f.box !== 'number') return;
+    facts[k] = { box: Math.max(0, Math.min(5, f.box | 0)), ok: +f.ok || 0, miss: +f.miss || 0, lastMs: +f.lastMs || 0, due: +f.due || 0, t: +f.t || 0 };
+  });
+  if (!confirm(`Läsa in ${hws.length} läxor och ${Object.keys(facts).length} tal? De slås ihop med det som redan finns.`)) return;
+  const ids = new Set(hws.map(x => x.id));
+  const del = { ...(state.deletedHw || {}) }; ids.forEach(id => delete del[id]); // a backup can bring a deleted list back
+  const m = mergeData({ ...snapshot(), deleted: del }, { homeworks: hws, deleted: {}, facts, best: d.best || {}, streak: d.streak || { n: 0, last: '' } });
+  applyMerged(m); save(); renderSync();
+  backupMsg(`Läste in ${hws.length} läxor och ${Object.keys(facts).length} tal ✓`, true);
+}
+$('bk-import').onclick = () => $('bk-file').click();
+$('bk-file').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { importData(JSON.parse(await f.text())); }
+  catch (err) { backupMsg('Det gick inte att läsa filen. Välj en kopia från Alice-x10.', false); }
+};
 
 /* ---------- start-up splash (1.3 s, the logo spins) ---------- */
 (function () {
