@@ -369,6 +369,13 @@
     <p class="muted" style="font-size:14px;margin:2px 0 8px">Rad = delar med, kolumn = svaret. Randiga rutor är låsta – de öppnas när tabellen sitter.</p>
     <div style="overflow-x:auto;text-align:center"><table class="hm" id="g-dmap"></table></div>
   </div>
+  <div class="box">
+    <b>🧹 Börja om</b>
+    <p class="muted" style="font-size:14px;margin:6px 0 8px"><b>Rensa framsteg</b> nollställer alla tal, rekord och dagar i rad. Läxorna finns kvar. <b>Rensa allt</b> tar också bort läxorna. Det rensas även på Alices andra enheter. Spara gärna en kopia först under ☁️ Synk &amp; kopia.</p>
+    <button class="btn small ghost" id="rs-progress">Rensa mina framsteg</button>
+    <button class="btn small ghost" id="rs-all">Rensa allt och börja om</button>
+    <div id="rs-msg" style="font-weight:700;min-height:22px;margin-top:6px"></div>
+  </div>
 </div>
 
 <div id="cheer" role="status" aria-live="polite"></div>
@@ -404,7 +411,7 @@ function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
   s = s && typeof s === 'object' ? s : {};
-  return Object.assign({ homeworks: [], activeHw: null, deletedHw: {}, facts: {}, best: {}, streak: { n: 0, last: '' }, muted: false, practice: { tables: null, mode: 'both', n: 20 }, memory: { tables: null, mode: 'both' } }, s);
+  return Object.assign({ homeworks: [], activeHw: null, deletedHw: {}, facts: {}, best: {}, streak: { n: 0, last: '' }, muted: false, practice: { tables: null, mode: 'both', n: 20 }, memory: { tables: null, mode: 'both' }, resetAt: 0 }, s);
 }
 function saveLocal() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 function save() { saveLocal(); scheduleSync(); }
@@ -534,6 +541,7 @@ function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   $(id).classList.add('active'); window.scrollTo(0, 0);
   if (id === 'syncscreen') $('bk-msg').textContent = '';
+  if (id === 'progress') $('rs-msg').textContent = '';
   ({ home: renderHome, tables: renderTables, practice: renderPractice, memsetup: renderMemSetup, progress: renderProgress, syncscreen: renderSync })[id]?.();
 }
 document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) show(g.dataset.go); });
@@ -950,7 +958,7 @@ function scheduleSync(ms = 2500) {
   clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(), ms);
 }
 function snapshot() { // what is shared between devices
-  return { homeworks: state.homeworks, deleted: state.deletedHw || {}, facts: state.facts || {}, best: state.best || {}, streak: state.streak || { n: 0, last: '' } };
+  return { homeworks: state.homeworks, deleted: state.deletedHw || {}, facts: state.facts || {}, best: state.best || {}, streak: state.streak || { n: 0, last: '' }, resetAt: state.resetAt || 0 };
 }
 function mergeData(a, b) { // pure. Lists: newest change wins, deletions stick. Facts: newest answer wins, counts take the highest.
   const deleted = { ...(a.deleted || {}) };
@@ -961,27 +969,31 @@ function mergeData(a, b) { // pure. Lists: newest change wins, deletions stick. 
   const autos = hws.filter(x => x.auto).sort((p, q) => p.id < q.id ? -1 : 1); // every device starts with its own "Alla tabeller": keep one
   autos.slice(1).forEach(x => { deleted[x.id] = Date.now(); });
   hws = hws.filter(x => !x.auto || x === autos[0]);
-  const facts = { ...(a.facts || {}) };
-  for (const [k, f] of Object.entries(b.facts || {})) {
+  // "Börja om" on any device sets resetAt. Progress older than that is dropped everywhere; newer practice survives.
+  const ra = Math.max(a.resetAt || 0, b.resetAt || 0);
+  const live = d => (d.resetAt || 0) === ra; // this side already knows about the latest reset
+  const facts = {};
+  for (const side of [a, b]) for (const [k, f] of Object.entries(side.facts || {})) {
+    if ((f.t || 0) <= ra) continue;
     const g = facts[k]; if (!g) { facts[k] = f; continue; }
     const n = (f.t || 0) > (g.t || 0) ? f : g;
     facts[k] = { ...n, ok: Math.max(f.ok || 0, g.ok || 0), miss: Math.max(f.miss || 0, g.miss || 0) };
   }
-  const best = { ...(a.best || {}) }; best.memory = { ...((a.best || {}).memory || {}) };
-  for (const [m, v] of Object.entries((b.best || {}).memory || {})) best.memory[m] = Math.max(best.memory[m] || 0, v);
-  const sa = a.streak || { n: 0, last: '' }, sb = b.streak || { n: 0, last: '' };
-  const streak = sa.last > sb.last ? sa : sb.last > sa.last ? sb : { n: Math.max(sa.n || 0, sb.n || 0), last: sa.last };
-  return { homeworks: hws, deleted, facts, best, streak };
+  const best = { memory: {} };
+  for (const side of [a, b]) if (live(side)) for (const [m, v] of Object.entries((side.best || {}).memory || {})) best.memory[m] = Math.max(best.memory[m] || 0, v);
+  let streak = { n: 0, last: '' };
+  for (const side of [a, b]) if (live(side)) { const s = side.streak || { n: 0, last: '' }; if (s.last > streak.last || (s.last === streak.last && (s.n || 0) > streak.n)) streak = { n: s.n || 0, last: s.last }; }
+  return { homeworks: hws, deleted, facts, best, streak, resetAt: ra };
 }
 function syncCanon(d) { // same content, same string (for "is there anything new to upload?")
   const sortObj = o => Object.fromEntries(Object.entries(o || {}).sort(([x], [y]) => x < y ? -1 : 1));
   return JSON.stringify({
     homeworks: [...(d.homeworks || [])].sort((x, y) => x.id < y.id ? -1 : 1).map(x => [x.id, x.name, x.tables, x.updated || 0, !!x.auto]),
-    deleted: sortObj(d.deleted), facts: Object.entries(sortObj(d.facts)).map(([k, f]) => [k, f.box, f.ok, f.miss, f.due, f.t]), best: d.best || {}, streak: d.streak || {}
+    deleted: sortObj(d.deleted), facts: Object.entries(sortObj(d.facts)).map(([k, f]) => [k, f.box, f.ok, f.miss, f.due, f.t]), best: d.best || {}, streak: d.streak || {}, resetAt: d.resetAt || 0
   });
 }
 function applyMerged(m) {
-  state.homeworks = m.homeworks; state.deletedHw = m.deleted; state.facts = m.facts; state.best = m.best; state.streak = m.streak;
+  state.homeworks = m.homeworks; state.deletedHw = m.deleted; state.facts = m.facts; state.best = m.best; state.streak = m.streak; state.resetAt = m.resetAt || 0;
   if (!state.homeworks.length) newHw('Alla tabeller', ALL_T, true);
   if (!state.homeworks.some(x => x.id === state.activeHw)) state.activeHw = state.homeworks[0].id;
   saveLocal();
@@ -1063,7 +1075,9 @@ function importData(d) {
   if (!confirm(`Läsa in ${hws.length} läxor och ${Object.keys(facts).length} tal? De slås ihop med det som redan finns.`)) return;
   const ids = new Set(hws.map(x => x.id));
   const del = { ...(state.deletedHw || {}) }; ids.forEach(id => delete del[id]); // a backup can bring a deleted list back
-  const m = mergeData({ ...snapshot(), deleted: del }, { homeworks: hws, deleted: {}, facts, best: d.best || {}, streak: d.streak || { n: 0, last: '' } });
+  const ra = state.resetAt || 0;
+  Object.values(facts).forEach(f => { if ((f.t || 0) <= ra) f.t = Date.now(); }); // restored progress counts as new
+  const m = mergeData({ ...snapshot(), deleted: del }, { homeworks: hws, deleted: {}, facts, best: d.best || {}, streak: d.streak || { n: 0, last: '' }, resetAt: ra });
   applyMerged(m); save(); renderSync();
   backupMsg(`Läste in ${hws.length} läxor och ${Object.keys(facts).length} tal ✓`, true);
 }
@@ -1073,6 +1087,31 @@ $('bk-file').onchange = async e => {
   try { importData(JSON.parse(await f.text())); }
   catch (err) { backupMsg('Det gick inte att läsa filen. Välj en kopia från Alice-x10.', false); }
 };
+
+/* ---------- start over (clear progress), also on the other devices through the sync ---------- */
+function resetProgress(all) {
+  const now = Date.now();
+  state.facts = {}; state.best = {}; state.streak = { n: 0, last: '' }; state.resetAt = now;
+  if (all) {
+    state.deletedHw = state.deletedHw || {};
+    state.homeworks.forEach(x => { state.deletedHw[x.id] = now; });
+    state.homeworks = []; state.activeHw = null;
+    state.practice = { tables: null, mode: 'both', n: 20 }; state.memory = { tables: null, mode: 'both' };
+    newHw('Alla tabeller', ALL_T, true);
+  }
+  save(); scheduleSync(300);
+}
+function askReset(all) {
+  const what = all ? 'ALLT: alla framsteg, rekord, dagar i rad och alla läxor' : 'alla framsteg, rekord och dagar i rad (läxorna finns kvar)';
+  if (!confirm(`Rensa ${what}?\n\nDet går inte att ångra. Rensningen gäller även Alices andra enheter när synken är på.`)) return;
+  const ans = prompt('Skriv JA för att bekräfta:');
+  const m = $('rs-msg');
+  if (!ans || ans.trim().toLowerCase() !== 'ja') { m.style.color = 'var(--t3)'; m.textContent = 'Inget rensades.'; return; }
+  resetProgress(all); renderProgress();
+  $('rs-msg').style.color = 'var(--green)'; $('rs-msg').textContent = all ? 'Allt är rensat – du börjar om! ✓' : 'Framstegen är rensade – du börjar om! ✓';
+}
+$('rs-progress').onclick = () => askReset(false);
+$('rs-all').onclick = () => askReset(true);
 
 /* ---------- start-up splash (1.3 s, the logo spins) ---------- */
 (function () {
