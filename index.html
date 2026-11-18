@@ -124,6 +124,21 @@
   .stars { font-size: 60px; text-align: center; letter-spacing: 6px; }
   .bignum { text-align: center; font-size: 20px; margin: 6px 0 12px; line-height: 1.5; }
 
+  /* memory */
+  .hud { display: flex; gap: 8px; margin-bottom: 10px; }
+  .hud .hb { flex: 1; background: var(--card); border-radius: 14px; padding: 6px 10px; text-align: center; font-weight: 800; font-size: 20px; color: var(--t2); border: 1px solid rgba(246,242,231,.1); }
+  .hud .hb span { display: block; font-size: 11px; font-weight: 700; color: var(--t3); }
+  #mboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .mcard { min-height: 84px; border-radius: 16px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px; font-weight: 800; font-size: clamp(14px, 4.7vw, 24px); line-height: 1.15; white-space: nowrap; cursor: pointer; user-select: none; border: 4px solid transparent; transition: transform .1s, opacity .25s; box-shadow: 0 4px 0 var(--shadow); }
+  .mcard.q { background: var(--d3); color: var(--t2); }
+  .mcard.a { background: var(--d5); color: var(--t1); }
+  .mcard.selected { border-color: var(--t2); transform: scale(1.06); }
+  .mcard.matched { opacity: .3; border-color: var(--green); cursor: default; box-shadow: none; }
+  .mcard.wrong { border-color: var(--red); animation: shake .35s; }
+  #cheer { position: fixed; top: 34%; left: 50%; transform: translate(-50%, -50%) scale(.8); background: var(--d2); color: var(--t2); border: 4px solid var(--t2); border-radius: 22px; padding: 12px 26px; text-align: center; font-size: 28px; font-weight: 800; z-index: 50; opacity: 0; pointer-events: none; transition: all .18s; white-space: nowrap; }
+  #cheer.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #cheer.bad { border-color: var(--red); color: var(--t1); }
+
   /* progress / heatmap */
   .hm { border-collapse: separate; border-spacing: 2px; margin: 0 auto; }
   .hm th { font-size: 12px; color: var(--muted); font-weight: 700; width: 20px; height: 20px; }
@@ -161,6 +176,7 @@
   <button class="btn orange" id="h-diag">🔍 Hitta vad jag kan</button>
   <button class="btn green" id="h-tables">📚 Mina tabeller</button>
   <button class="btn blue" id="h-practice">✏️ Öva</button>
+  <button class="btn orange" id="h-memory">🃏 Memory</button>
   <button class="btn pink" id="h-progress">📈 Mina framsteg</button>
   <details class="box" id="h-help">
     <summary>❓ Så här fungerar Alice-x10</summary>
@@ -168,6 +184,7 @@
       <li>⚡ <b>Dagens träning</b> väljer själv 15 frågor – de du kan sämst kommer först.</li>
       <li>🔍 <b>Hitta vad jag kan</b> frågar många olika tal en gång, så att appen ser vad som är lätt och svårt.</li>
       <li>✏️ <b>Öva</b> låter dig välja tabeller (till exempel bara 7:an).</li>
+      <li>🃏 <b>Memory</b>: para ihop talet (blått) med svaret (rött). Rätt i rad ger bonuspoäng!</li>
       <li>❌ Svarar du fel visas rätt svar, och <b>samma fråga kommer tillbaka</b> igen och igen tills den sitter.</li>
       <li>📈 <b>Mina framsteg</b> visar alla tal som en färgkarta: <span style="color:#ff7b82">rött</span> = svårt, <span style="color:#ffd54a">gult</span> = övar, <span style="color:#57d68d">grönt</span> = sitter.</li>
     </ol>
@@ -235,6 +252,43 @@
   <button class="btn" id="p-start">▶ Starta</button>
 </div>
 
+<!-- MEMORY SETUP -->
+<div id="memsetup" class="screen">
+  <div class="topbar"><button class="btn small ghost" data-go="home">← Hem</button></div>
+  <h2>Memory</h2>
+  <p class="muted" style="text-align:center;margin-bottom:8px">Para ihop talet (blått kort) med rätt svar (rött kort). 8 par att hitta!</p>
+  <div class="box">
+    <b>Vilka tabeller?</b>
+    <div class="chips" id="m-chips"></div>
+    <div class="seg">
+      <button class="btn small ghost" data-mq="hw">Veckans läxa</button>
+      <button class="btn small ghost" data-mq="all">Alla</button>
+      <button class="btn small ghost" data-mq="weak">Mina svåraste</button>
+      <button class="btn small ghost" data-mq="none">Rensa</button>
+    </div>
+    <b>Vad?</b>
+    <div class="seg">
+      <button class="btn small ghost" data-mm="mult">✖️ Gånger</button>
+      <button class="btn small ghost" data-mm="div">➗ Delat med</button>
+      <button class="btn small ghost" data-mm="both">Båda</button>
+    </div>
+    <div class="muted" id="m-count" style="text-align:center;margin-top:6px"></div>
+  </div>
+  <button class="btn orange" id="m-start">▶ Starta</button>
+</div>
+
+<!-- MEMORY -->
+<div id="memory" class="screen">
+  <div class="topbar"><button class="btn small ghost" id="m-quit">✕ Avsluta</button></div>
+  <div class="hud">
+    <div class="hb"><span>Poäng</span><b id="m-score">0</b></div>
+    <div class="hb"><span>Par</span><b id="m-pairs">0/8</b></div>
+    <div class="hb"><span>Kombo</span><b id="m-combo">–</b></div>
+  </div>
+  <div id="mboard"></div>
+  <p class="muted" style="text-align:center;margin-top:10px;font-size:14px">Tryck på ett blått och ett rött kort som hör ihop.</p>
+</div>
+
 <!-- ROUND -->
 <div id="round" class="screen">
   <div class="topbar"><button class="btn small ghost" id="r-quit">✕ Avsluta</button><button class="btn small ghost" id="r-hintbtn">💡 Ledtråd</button></div>
@@ -259,6 +313,7 @@
   <div class="stars" id="x-stars"></div>
   <div class="bignum" id="x-text"></div>
   <button class="btn" id="x-main">Öva mer</button>
+  <button class="btn blue" id="x-extra" style="display:none">Öva de här</button>
   <button class="btn pink" data-go="progress">📈 Mina framsteg</button>
   <button class="btn ghost" data-go="home">Hem</button>
 </div>
@@ -295,6 +350,8 @@
   </div>
 </div>
 
+<div id="cheer" role="status" aria-live="polite"></div>
+
 <script>
 'use strict';
 /* no pinch zoom (iOS Safari ignores user-scalable=no, so block the gestures too) */
@@ -327,7 +384,7 @@ function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
   s = s && typeof s === 'object' ? s : {};
-  return Object.assign({ homeworks: [], activeHw: null, deletedHw: {}, facts: {}, best: {}, streak: { n: 0, last: '' }, muted: false, practice: { tables: null, mode: 'both', n: 20 } }, s);
+  return Object.assign({ homeworks: [], activeHw: null, deletedHw: {}, facts: {}, best: {}, streak: { n: 0, last: '' }, muted: false, practice: { tables: null, mode: 'both', n: 20 }, memory: { tables: null, mode: 'both' } }, s);
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 const $ = id => document.getElementById(id);
@@ -388,7 +445,7 @@ function difficulty(key) { // easy tables first; trivial facts (0 and 1) last, t
 function prio(key, now) { const f = state.facts[key]; return (f.box === 0 ? 100 : 0) + f.miss * 4 + Math.max(0, (now - f.due) / DAY) * 3 - f.box * 5; }
 
 /* choose n facts from `keys`: due/weak first, a few refreshers, then new ones (easy first) */
-function pickFacts(keys, n) {
+function pickFacts(keys, n, keepOrder) { // keepOrder: most urgent first instead of shuffled
   const now = Date.now(), have = [], fresh = [];
   keys.forEach(k => (state.facts[k] ? have : fresh).push(k));
   const due = have.filter(k => state.facts[k].box === 0 || state.facts[k].due <= now).sort((a, b) => prio(b, now) - prio(a, now));
@@ -403,14 +460,14 @@ function pickFacts(keys, n) {
     const used = new Set(out);
     out.push(...have.filter(k => !used.has(k)).sort((a, b) => state.facts[a].due - state.facts[b].due).slice(0, n - out.length));
   }
-  return shuffle(out);
+  return keepOrder ? out : shuffle(out);
 }
 
 function touch(key) { return state.facts[key] || (state.facts[key] = { box: 0, ok: 0, miss: 0, lastMs: 0, due: 0, t: 0 }); }
 function recordMiss(key) { const f = touch(key), now = Date.now(); f.box = 0; f.miss++; f.due = now + INTERVAL[0]; f.t = now; save(); }
 function recordResult(key, kind, ms) {
   const f = touch(key), now = Date.now(), triv = isTrivial(parse(key));
-  f.lastMs = ms; f.t = now;
+  if (ms) f.lastMs = ms; f.t = now;
   if (kind === 'fast') { f.ok++; f.box = Math.min(5, f.box + (triv ? 2 : 1)); f.due = now + INTERVAL[f.box]; }
   else if (kind === 'slow') { f.ok++; f.due = now + 15 * 60e3; }
   else if (kind === 'relearned') { f.ok++; f.box = Math.max(1, f.box); f.due = now + INTERVAL[1]; }
@@ -436,6 +493,10 @@ const sfx = {
   ok: () => { tone(660, 0, .12); tone(880, .1, .18); },
   no: () => { tone(220, 0, .2, 'sawtooth', .1); tone(165, .15, .25, 'sawtooth', .1); },
   win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .14, .25)),
+  tap: () => tone(520, 0, .05, 'triangle', .08),
+  ding: () => { tone(784, 0, .12, 'triangle', .16); tone(1175, .1, .22, 'triangle', .16); },
+  combo: n => [659, 784, 988, 1319].slice(0, Math.min(4, n)).forEach((f, i) => tone(f, i * .09, .2, 'triangle', .16)),
+  buzz: () => { tone(150, 0, .28, 'sawtooth', .12); tone(110, .1, .3, 'sawtooth', .1); },
 };
 function confetti() {
   const em = ['🎉', '⭐', '✨', '🎈', '💜', '🧡'];
@@ -451,7 +512,7 @@ document.head.insertAdjacentHTML('beforeend', '<style>@keyframes fall { to { tra
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   $(id).classList.add('active'); window.scrollTo(0, 0);
-  ({ home: renderHome, tables: renderTables, practice: renderPractice, progress: renderProgress })[id]?.();
+  ({ home: renderHome, tables: renderTables, practice: renderPractice, memsetup: renderMemSetup, progress: renderProgress })[id]?.();
 }
 document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) show(g.dataset.go); });
 
@@ -469,6 +530,7 @@ $('h-mute').onclick = () => { state.muted = !state.muted; save(); renderHome(); 
 $('h-tables').onclick = () => show('tables');
 $('h-practice').onclick = () => show('practice');
 $('h-progress').onclick = () => show('progress');
+$('h-memory').onclick = () => show('memsetup');
 
 /* ---------- Mina tabeller ---------- */
 function renderTables() {
@@ -696,7 +758,7 @@ function bumpStreak() {
   state.streak.n = state.streak.last === yd ? state.streak.n + 1 : 1; state.streak.last = t; save();
 }
 function finish() {
-  const r = R; R = null; bumpStreak();
+  const r = R; R = null; bumpStreak(); $('x-extra').style.display = 'none';
   const uniq = [...new Set(r.missedKeys)], names = uniq.map(k => parse(k).text.replace(/ /g, ''));
   $('x-text').textContent = '';
   if (r.kind === 'diag') {
@@ -714,6 +776,107 @@ function finish() {
   $('x-text').textContent = `${r.direct} av ${r.total} rätt direkt. ` + (names.length ? 'Det här övade du extra: ' + names.join(', ') + '. De kommer tillbaka!' : 'Inga fel alls!');
   $('x-main').textContent = r.kind === 'daily' ? '⚡ Ny omgång' : '✏️ Öva mer';
   $('x-main').onclick = () => r.kind === 'daily' ? $('h-daily').click() : $('p-start').click();
+  show('result'); sfx.win(); if (stars >= 2) confetti();
+}
+
+/* ---------- Memory (4 × 4, open cards: a blue expression + a red answer) ---------- */
+const fmtTime = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+const CHEERS = ['Bra!', 'Snyggt!', 'Superbra!', 'Fantastiskt!', 'Grymt!', 'Toppen!', 'Perfekt!', 'Wow!'];
+let cheerT;
+function cheer(text, bad) { const c = $('cheer'); c.textContent = text; c.classList.toggle('bad', !!bad); c.classList.add('show'); clearTimeout(cheerT); cheerT = setTimeout(() => c.classList.remove('show'), 950); }
+
+function memTables() { return new Set(state.memory.tables || activeHw().tables); }
+function renderMemSetup() {
+  const sel = memTables(), box = $('m-chips'); box.innerHTML = '';
+  ALL_T.forEach(t => {
+    const c = document.createElement('div'); c.className = 'chip' + (sel.has(t) ? ' on' : ''); c.innerHTML = '<b>' + t + '</b><small>' + tableKnownCount(t) + '/13 kan</small>';
+    c.onclick = () => { sel.has(t) ? sel.delete(t) : sel.add(t); state.memory.tables = [...sel]; save(); renderMemSetup(); };
+    box.appendChild(c);
+  });
+  document.querySelectorAll('[data-mm]').forEach(b => b.classList.toggle('on', b.dataset.mm === state.memory.mode));
+  const n = keysFor([...sel], state.memory.mode).length;
+  $('m-count').textContent = n >= 8 ? n + ' olika tal att välja bland.' : n ? 'Välj fler tabeller (minst 8 tal behövs).' : 'Välj minst en tabell.';
+  $('m-start').disabled = n < 8;
+}
+document.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { state.memory.mode = b.dataset.mm; save(); renderMemSetup(); });
+document.querySelectorAll('[data-mq]').forEach(b => b.onclick = () => {
+  const q = b.dataset.mq;
+  state.memory.tables = q === 'hw' ? activeHw().tables.slice() : q === 'all' ? ALL_T.slice() : q === 'none' ? [] : weakTables();
+  save(); renderMemSetup();
+});
+
+function memPick(keys) { // 8 facts: the weakest first (5), then random ones; different answers when possible
+  const ordered = pickFacts(keys, Math.min(keys.length, 40), true), picked = [], vals = new Set();
+  const take = k => { const v = parse(k).ans; if (vals.has(v)) return false; vals.add(v); picked.push(k); return true; };
+  for (const k of ordered) { if (picked.length >= 5) break; take(k); }
+  for (const k of shuffle(keys.filter(k => !picked.includes(k)))) { if (picked.length >= 8) break; take(k); }
+  if (picked.length < 8) for (const k of shuffle(keys.filter(k => !picked.includes(k)))) { if (picked.length >= 8) break; picked.push(k); }
+  return picked;
+}
+let M = null;
+$('m-start').onclick = () => startMemory();
+function startMemory() {
+  const keys = keysFor([...memTables()], state.memory.mode); if (keys.length < 8) return;
+  const picked = memPick(keys), cards = [];
+  picked.forEach(k => { const f = parse(k); cards.push({ type: 'q', key: k, text: f.text, val: f.ans }); cards.push({ type: 'a', key: k, text: String(f.ans), val: f.ans }); });
+  M = { keys: picked, total: picked.length, pairs: 0, points: 0, combo: 0, bestCombo: 0, errors: 0, sel: null, locked: false, t0: Date.now(), missed: new Set() };
+  const board = $('mboard'); board.innerHTML = '';
+  shuffle(cards).forEach(c => {
+    const d = document.createElement('div'); d.className = 'mcard ' + c.type; d.textContent = c.text.replace(/ /g, ' '); // narrow no-break spaces keep "121 ÷ 11" on one line
+    d.onclick = () => memTap(d, c); board.appendChild(d);
+  });
+  memHud(); show('memory');
+}
+function memHud() {
+  $('m-score').textContent = M.points; $('m-pairs').textContent = `${M.pairs}/${M.total}`;
+  $('m-combo').textContent = M.combo >= 2 ? '🔥 ×' + M.combo : '–';
+}
+function memTap(el, c) {
+  if (!M || M.locked || el.classList.contains('matched')) return;
+  sfx.tap();
+  if (M.sel && M.sel.c.type === c.type) { // same colour again: change the choice
+    M.sel.el.classList.remove('selected');
+    if (M.sel.el === el) { M.sel = null; return; }
+    M.sel = { el, c }; el.classList.add('selected'); return;
+  }
+  el.classList.add('selected');
+  if (!M.sel) { M.sel = { el, c }; return; }
+  const a = M.sel, b = { el, c }; M.sel = null; M.locked = true;
+  const q = a.c.type === 'q' ? a.c : b.c, ans = a.c.type === 'a' ? a.c : b.c;
+  if (q.val === ans.val) { // right pair
+    M.pairs++; M.combo++; M.bestCombo = Math.max(M.bestCombo, M.combo);
+    M.points += 10 + Math.min(25, 5 * (M.combo - 1));
+    if (!M.missed.has(q.key)) recordResult(q.key, 'slow', 0); // counts as right, but no level-up (no timing per pair)
+    if (M.combo >= 3) sfx.combo(M.combo); else sfx.ding();
+    cheer(M.combo >= 3 ? 'Kombo ×' + M.combo + ' 🔥' : CHEERS[(M.pairs - 1) % CHEERS.length]);
+    setTimeout(() => {
+      [a.el, b.el].forEach(e => { e.classList.remove('selected'); e.classList.add('matched'); });
+      M.locked = false; memHud();
+      if (M.pairs === M.total) setTimeout(finishMemory, 700);
+    }, 300);
+  } else { // wrong pair
+    M.errors++; M.combo = 0; M.points = Math.max(0, M.points - 3);
+    if (!M.missed.has(q.key)) { M.missed.add(q.key); recordMiss(q.key); } // comes back in Dagens träning
+    sfx.buzz(); cheer('Nästan – försök igen!', true); memHud();
+    [a.el, b.el].forEach(e => e.classList.add('wrong'));
+    setTimeout(() => { [a.el, b.el].forEach(e => e.classList.remove('selected', 'wrong')); M.locked = false; }, 800);
+  }
+}
+$('m-quit').onclick = () => { if (confirm('Vill du avsluta?')) { M = null; show('home'); } };
+function finishMemory() {
+  const m = M; M = null; bumpStreak();
+  const sec = Math.round((Date.now() - m.t0) / 1000), bonus = Math.max(0, 90 - sec) * 2, final = m.points + bonus;
+  const stars = m.errors <= 1 && sec <= 90 ? 3 : m.errors <= 4 ? 2 : 1;
+  const b = state.best.memory = state.best.memory || {}, mode = state.memory.mode, isBest = b[mode] == null || final > b[mode];
+  if (isBest) b[mode] = final; save();
+  const names = [...m.missed].map(k => parse(k).text.replace(/ /g, ''));
+  $('x-title').textContent = stars === 3 ? 'Alla par hittade! 🎉' : 'Bra jobbat! 👍';
+  $('x-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+  $('x-text').textContent = `${final} poäng · ${m.errors} fel · bästa kombo ×${m.bestCombo} · tid ${fmtTime(sec)}`
+    + (isBest ? ' · 🏆 Nytt rekord!' : '') + (names.length ? ' · Svåra par: ' + names.join(', ') : '');
+  $('x-main').textContent = '🃏 Spela igen'; $('x-main').onclick = () => startMemory();
+  const ex = $('x-extra'); ex.style.display = names.length ? '' : 'none';
+  ex.onclick = () => startRound('practice', [...m.missed], 'Öva de här');
   show('result'); sfx.win(); if (stars >= 2) confetti();
 }
 
